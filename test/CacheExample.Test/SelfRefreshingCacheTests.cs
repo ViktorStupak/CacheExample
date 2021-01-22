@@ -78,6 +78,21 @@ namespace CacheExample.Test
             Assert.NotEqual(data, data3);
             Log.Debug("********************************");
         }
+        [Fact]
+        public void WithErrorNotReloadTest()
+        {
+
+            using var cache = new SelfRefreshingCache<string>(_logger, 5, 10, GetSomeValue2);
+            var data = cache.GetOrCreate();
+            var data2 = cache.GetOrCreate();
+
+            Thread.Sleep(TimeSpan.FromSeconds(60));
+
+            Assert.Throws<System.Exception>(() => cache.GetOrCreate());
+
+            Assert.Equal(data, data2);
+            Log.Debug("********************************");
+        }
 
         private static bool _stopRun;
 
@@ -96,6 +111,24 @@ namespace CacheExample.Test
             }
 
             _stopRun = true;
+            return result;
+        }
+        private static bool _stopRun2;
+
+        private static string GetSomeValue2()
+        {
+            if (_stopRun2)
+            {
+                throw new Exception("some exception in target function");
+            }
+
+            var result = DateTime.Now.Ticks.ToString();
+            for (var i = 0; i < 10000; i++)
+            {
+                result += i*5;
+            }
+
+            _stopRun2 = true;
             return result;
         }
 

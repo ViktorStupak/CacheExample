@@ -67,8 +67,8 @@ namespace CacheExample
             lock (_lock)
             {
                 _cache.Set(_cacheKey, result, GetPolicy(_refreshPeriodSeconds, _validityOfResultSeconds));
-                WriteLog(_logger, LogLevel.Debug, $"Set new cache for entity:{_cacheKey}");
             }
+            WriteLog(_logger, LogLevel.Debug, $"Set new cache for entity:{_cacheKey}");
             return result;
         }
 
@@ -92,7 +92,8 @@ namespace CacheExample
             {
                 // Dispose managed state (managed objects).
                 _cache.Dispose();
-                GC.SuppressFinalize(this);
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
             }
 
             _disposed = true;
@@ -160,7 +161,7 @@ namespace CacheExample
                         {
                             var updatedEntity = newEntity;
                             args.UpdatedCacheItem = new CacheItem(cacheKey, updatedEntity);
-                            args.UpdatedCacheItemPolicy = GetPolicy(refreshPeriodSeconds, validityOfResultSeconds);
+                            args.UpdatedCacheItemPolicy = GetPolicy(_refreshPeriodSeconds, _validityOfResultSeconds);
                             WriteLog(_logger, LogLevel.Debug, $"cache for entity:{cacheKey} is update");
                         }
                         else
@@ -175,6 +176,7 @@ namespace CacheExample
                             else
                             {
                                 args.Source.Remove(cacheKey);
+                                WriteLog(_logger, LogLevel.Critical, $"Cannot update cache. entity:{cacheKey} was cleaned");
                             }
                         }
                     }
